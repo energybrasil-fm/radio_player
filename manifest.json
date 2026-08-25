@@ -1,0 +1,20 @@
+{
+  "name": "Energy 98.FM",
+  "short_name": "Energy 98.FM",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "inherit",
+  "theme_color": "inherit",
+  "icons": [
+    {
+      "src": "https://wapka-img.zuna.id/21a1e8e0.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "https://wapka-img.zuna.id/21a1e8e0.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
