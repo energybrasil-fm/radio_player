@@ -93,7 +93,7 @@ export const stations = [
         "name": "Top 40 Hitz",
         "description": "Today’s Biggest Hit Music",
         "logotipo": "https://100hitz.com/wp-content/uploads/2023/03/100hitz.com-png-08-e1678043645250.png",
-        "api": "https://100hitz.com/?qtproxycall=aHR0cHM6Ly9wdXJlcGxheS5jZG5zdHJlYW0xLmNvbS82MDI1XzEyOC5tcDM%3D&icymetadata=1&_=1787756586339",
+        "api": "https://100hitz.com/?qtproxycall=aHR0cHM6Ly9wdXJlcGxheS5jZG5zdHJlYW0xLmNvbS82MDI1XzEyOC5tcDM%3D&icymetadata=1",
         "historyApi": "",
         "type": "100hitz",
         "limitHistory": 10,
