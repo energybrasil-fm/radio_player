@@ -1,6 +1,6 @@
 // ==========================================
 // estacoes.js
-// JSON DE CONFIGURAÇÃO DE ESTAÇÕES MULTIPLAS COM DESCRIÇÃO 
+// JSON DE CONFIGURAÇÃO DE ESTAÇÕES MULTIPLAS COM DESCRIÇÃO. 
 // para shoutcast/icecast use os termos específicos.
 // shoutcast V2: API: "<IP>:<porta>/stats?sid=id&json=1" historyAPI: "<IP>:<porta>/played.html"
 // icecast: API: "<IP>:<porta>/status-json.xsl"
