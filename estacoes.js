@@ -87,5 +87,25 @@ export const stations = [
             "mid": { "url": "", "format": "Qualidade padrão" },
             "low": { "url": "https://streaming.nrjaudio.fm/oufdfatx4thg?origine=playernrj", "format": "Qualidade Compactada" }
         }
+    },
+    {
+        "id": "100_hitz",
+        "name": "Top 40 Hitz",
+        "description": "Today’s Biggest Hit Music",
+        "logotipo": "https://100hitz.com/wp-content/uploads/2023/03/100hitz.com-png-08-e1678043645250.png",
+        "api": "https://100hitz.com/?qtproxycall=aHR0cHM6Ly9wdXJlcGxheS5jZG5zdHJlYW0xLmNvbS82MDI1XzEyOC5tcDM%3D&icymetadata=1&_=1787756586339",
+        "historyApi": "",
+        "type": "100hitz",
+        "limitHistory": 10,
+        "record": "false",
+        "contact": "https://fr-fr.facebook.com/nrjradio",
+        "visualizer": "true",
+        "defaultArt": "https://100hitz.com/wp-content/uploads/2023/03/1.-Top-40_Hitz-LargeGlow-Offset-370x370.png",
+        "bgdefaultArt": "https://100hitz.com/wp-content/uploads/2023/03/1.-Top-40_Hitz-LargeGlow-Offset-370x370.png",
+        "streams": {
+            "high": { "url": "", "format": "Alta qualidade" },
+            "mid": { "url": "https://pureplay.cdnstream1.com/6025_128.mp3", "format": "Qualidade padrão" },
+            "low": { "url": "", "format": "Qualidade Compactada" }
+        }
     }
 ];
