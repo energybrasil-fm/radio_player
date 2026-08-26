@@ -44,62 +44,70 @@ const CORS_PROXY = 'https://images.weserv.nl/?url=';
 let hls = null;
 
 function setupAudioSource(player, url) {
-    if (!player) return;
-    
-    // Destrói a instância anterior do HLS se existir para evitar vazamentos e falhas ao trocar de rádio
-    if (player.id === 'audioPlayer') {
-        if (hls) {
-            hls.destroy();
-            hls = null;
+    return new Promise((resolve) => {
+        if (!player) return resolve();
+        
+        if (player.id === 'audioPlayer') {
+            if (hls) {
+                hls.destroy();
+                hls = null;
+            }
+            player.removeAttribute('src');
+            player.load();
         }
-        player.removeAttribute('src');
-        player.load();
-    }
 
-    if (url.includes('.m3u8') || url.includes('.m3u')) {
-        if (typeof Hls !== 'undefined' && Hls.isSupported()) {
-            hls = new Hls({
-                enableWorker: true,
-                lowLatencyMode: true,
-                backBufferLength: 90
-            });
-            
-            hls.on(Hls.Events.MEDIA_ATTACHED, () => {
-                hls.loadSource(url);
-            });
-            
-            hls.on(Hls.Events.ERROR, function (event, data) {
-                if (data.fatal) {
-                    switch (data.type) {
-                        case Hls.ErrorTypes.NETWORK_ERROR:
-                            hls.startLoad();
-                            break;
-                        case Hls.ErrorTypes.MEDIA_ERROR:
-                            hls.recoverMediaError();
-                            break;
-                        default:
-                            hls.destroy();
-                            if(isPlaying && !isSwitchingQuality) {
-                                setBufferingState(false); setOfflineState(true); handleReconnect();
-                            }
-                            break;
+        if (url.includes('.m3u8') || url.includes('.m3u')) {
+            if (typeof Hls !== 'undefined' && Hls.isSupported()) {
+                hls = new Hls({
+                    enableWorker: true,
+                    lowLatencyMode: true,
+                    backBufferLength: 90
+                });
+                
+                hls.on(Hls.Events.MEDIA_ATTACHED, () => {
+                    hls.loadSource(url);
+                });
+                
+                hls.on(Hls.Events.MANIFEST_PARSED, () => {
+                    resolve();
+                });
+                
+                hls.on(Hls.Events.ERROR, function (event, data) {
+                    if (data.fatal) {
+                        switch (data.type) {
+                            case Hls.ErrorTypes.NETWORK_ERROR:
+                                hls.startLoad();
+                                break;
+                            case Hls.ErrorTypes.MEDIA_ERROR:
+                                hls.recoverMediaError();
+                                break;
+                            default:
+                                hls.destroy();
+                                hls = null;
+                                if(isPlaying && !isSwitchingQuality) {
+                                    setBufferingState(false); setOfflineState(true); handleReconnect();
+                                }
+                                resolve(); 
+                                break;
+                        }
                     }
-                }
-            });
-            
-            hls.attachMedia(player);
-        } else if (player.canPlayType('application/vnd.apple.mpegurl')) {
-            // Suporte nativo ao HLS (Safari, iOS, macOS)
+                });
+                
+                hls.attachMedia(player);
+            } else if (player.canPlayType('application/vnd.apple.mpegurl')) {
+                player.src = url;
+                player.load();
+                resolve();
+            } else {
+                window.showGenericToast('Incompatível', 'Seu navegador não suporta HLS.', 'bi-exclamation-triangle', '#f43f5e');
+                resolve();
+            }
+        } else {
             player.src = url;
             player.load();
-        } else {
-            window.showGenericToast('Incompatível', 'Seu navegador não suporta HLS.', 'bi-exclamation-triangle', '#f43f5e');
+            resolve();
         }
-    } else {
-        // Stream Padrão (Icecast/Shoutcast - mp3/aac)
-        player.src = url;
-        player.load();
-    }
+    });
 }
 
 // ==========================================
@@ -305,7 +313,6 @@ window.toggleRecording = async function() {
     const headerDropdown = document.getElementById('headerDropdown');
     const station = stations[currentStationIndex];
     
-    // VERIFICA SE A RÁDIO PERMITE GRAVAÇÃO
     const canRecord = station.record !== "false" && station.record !== false;
     
     if (!canRecord) {
@@ -323,7 +330,6 @@ window.toggleRecording = async function() {
                 return;
             }
 
-            // Impede a gravação de arquivos de manifesto HLS via fetch simples
             if (streamUrl.includes('.m3u8') || streamUrl.includes('.m3u')) {
                 window.showGenericToast('Gravação Indisponível', 'Não é possível gravar transmissões HLS (.m3u8) por este método.', 'bi-mic-mute-fill', '#fceb05');
                 headerDropdown.classList.remove('show');
@@ -1003,22 +1009,22 @@ function handleReconnect() {
         setOfflineState(true);
         clearTimeout(reconnectTimeout);
         
-        setupAudioSource(audioPlayer, getCurrentStreamUrl(true));
-
-        reconnectTimeout = setTimeout(() => {
-            if (isPlaying) {
-                setOfflineState(false); setBufferingState(true);
-                
-                audioPlayer.play().then(() => {
-                    setBufferingState(false);
-                }).catch(e => {
-                    isSwitchingQuality = false; 
-                    setBufferingState(false); 
-                    setOfflineState(true);
-                    handleReconnect();
-                });
-            }
-        }, 5000); 
+        setupAudioSource(audioPlayer, getCurrentStreamUrl(true)).then(() => {
+            reconnectTimeout = setTimeout(() => {
+                if (isPlaying) {
+                    setOfflineState(false); setBufferingState(true);
+                    
+                    audioPlayer.play().then(() => {
+                        setBufferingState(false);
+                    }).catch(e => {
+                        isSwitchingQuality = false; 
+                        setBufferingState(false); 
+                        setOfflineState(true);
+                        handleReconnect();
+                    });
+                }
+            }, 5000);
+        }); 
     }
 }
 
@@ -1090,8 +1096,9 @@ function fadeAudio(player, action, callback) {
             }).catch(e => {
                 isSwitchingQuality = false; 
                 if (e.name !== 'AbortError') { setBufferingState(false); setOfflineState(true); handleReconnect(); }
+                if (callback) callback();
             });
-        } else { isSwitchingQuality = false; }
+        } else { isSwitchingQuality = false; if (callback) callback(); }
     } 
     else if (action === 'out') { 
         if (isBackground) {
@@ -1296,20 +1303,25 @@ window.selectQualityMode = function(mode) {
 function applyQualityStream(quality) {
     if (isSwitchingQuality) return; 
     const station = stations[currentStationIndex];
-    if (!station.streams[quality] || !station.streams[quality].url) quality = Object.keys(station.streams).find(k => station.streams[k] && station.streams[k].url);
+    let targetUrl = station.streams[quality]?.url;
+    if (!targetUrl) quality = Object.keys(station.streams).find(k => station.streams[k] && station.streams[k].url);
     
     const oldQuality = activeQualityLevel; activeQualityLevel = quality; updateQualityBadges();
-    if (oldQuality === quality && (audioPlayer.src !== "" || hls !== null)) return;
+    
+    const hasSource = hls !== null || !!audioPlayer.getAttribute('src');
+    if (oldQuality === quality && hasSource) return;
 
     if (isPlaying) {
         isSwitchingQuality = true; setLoadingState(true); setBufferingState(true); clearTimeout(offlineTimeout); setOfflineState(false);
-        fadeAudio(audioPlayer, 'out', () => { 
-            setupAudioSource(audioPlayer, getCurrentStreamUrl());
+        fadeAudio(audioPlayer, 'out', async () => { 
+            await setupAudioSource(audioPlayer, getCurrentStreamUrl());
             fadeAudio(audioPlayer, 'in', () => { 
                 isSwitchingQuality = false; setBufferingState(false);
             }); 
         });
-    } else { if(audioPlayer) setupAudioSource(audioPlayer, getCurrentStreamUrl()); }
+    } else { 
+        if(audioPlayer) setupAudioSource(audioPlayer, getCurrentStreamUrl()); 
+    }
 }
 
 function updateQualityBadges() {
@@ -1388,19 +1400,27 @@ function toggleLivePlay() {
         setLoadingState(true); clearTimeout(offlineTimeout); setOfflineState(false);
         
         const hasSource = hls !== null || !!audioPlayer.getAttribute('src');
-        if(audioPlayer && !hasSource) setupAudioSource(audioPlayer, getCurrentStreamUrl()); 
         
-        const homeView = document.getElementById('homeView'); const playerView = document.getElementById('playerView');
-        if(homeView) homeView.style.display = 'none'; if(playerView) playerView.style.display = 'flex'; if(appContainer) appContainer.classList.add('player-mode');
-        setTimeout(() => { if (currentTrackMetadata && currentTrackMetadata.title) updateUIText(currentTrackMetadata); }, 50);
+        const startPlayback = () => {
+            const homeView = document.getElementById('homeView'); const playerView = document.getElementById('playerView');
+            if(homeView) homeView.style.display = 'none'; if(playerView) playerView.style.display = 'flex'; if(appContainer) appContainer.classList.add('player-mode');
+            setTimeout(() => { if (currentTrackMetadata && currentTrackMetadata.title) updateUIText(currentTrackMetadata); }, 50);
 
-        initVisualizer(); fadeAudio(audioPlayer, 'in');
+            initVisualizer(); 
+            fadeAudio(audioPlayer, 'in');
 
-        if(playerPlayIcon) playerPlayIcon.classList.replace('bi-play-fill', 'bi-pause-fill'); 
-        if(stickyPlayIcon) stickyPlayIcon.classList.replace('bi-play-fill', 'bi-pause-fill');
-        
-        if ('mediaSession' in navigator) navigator.mediaSession.playbackState = "playing";
-        updateMediaSession();
+            if(playerPlayIcon) playerPlayIcon.classList.replace('bi-play-fill', 'bi-pause-fill'); 
+            if(stickyPlayIcon) stickyPlayIcon.classList.replace('bi-play-fill', 'bi-pause-fill');
+            
+            if ('mediaSession' in navigator) navigator.mediaSession.playbackState = "playing";
+            updateMediaSession();
+        };
+
+        if(audioPlayer && !hasSource) {
+            setupAudioSource(audioPlayer, getCurrentStreamUrl()).then(startPlayback);
+        } else {
+            startPlayback();
+        }
         
     } else {
         isPlaying = false;
@@ -1423,7 +1443,6 @@ window.changeStation = function(index) {
     isSwitchingQuality = false; firstHistoryRender = true; currentTrackId = ""; previousListenersCount = -1; 
     const station = stations[index];
 
-    // ATUALIZAÇÃO DO BOTÃO DE GRAVAÇÃO COM BASE NO PARÂMETRO RECORD DA ESTAÇÃO
     const recordBtn = document.getElementById('recordBtn');
     if (recordBtn) {
         const canRecord = station.record !== "false" && station.record !== false;
@@ -1458,8 +1477,8 @@ window.changeStation = function(index) {
     
     if (isPlaying) {
         setLoadingState(true); clearTimeout(offlineTimeout); setOfflineState(false);
-        fadeAudio(audioPlayer, 'out', () => { 
-            setupAudioSource(audioPlayer, getCurrentStreamUrl());
+        fadeAudio(audioPlayer, 'out', async () => { 
+            await setupAudioSource(audioPlayer, getCurrentStreamUrl());
             fadeAudio(audioPlayer, 'in'); 
         });
     } else { 
@@ -1584,7 +1603,6 @@ function updateUIText(metadata) {
         }
     }
     
-    // Atualiza o texto na lista de estações também caso o modal esteja aberto
     const activeTrackEl = document.getElementById(`station-track-${currentStationIndex}`);
     if (activeTrackEl) {
         const isDefault = (metadata.title === 'Conectando...' || metadata.artist === 'Aguarde' || metadata.title === station.name || metadata.artist === 'Transmissão Local' || metadata.title === 'Transmissão offline...');
@@ -1711,7 +1729,6 @@ function updateUIArt(newArtUrl, bgArtUrl) {
         updateThemeColor(newArtUrl);
     }, 500); 
     
-    // Atualiza a capa da estação ATIVA no modal se estiver aberto e ajusta a classe de animação crossfade
     const activeStationArtEl = document.getElementById(`station-art-${currentStationIndex}`);
     if (activeStationArtEl) {
         const st = stations[currentStationIndex];
@@ -1938,4 +1955,4 @@ fetchMetadata();
 setInterval(fetchMetadata, updateIntervalTime); 
 setInterval(evaluateAutoQuality, 10000);
 
-   
+     
