@@ -63,7 +63,7 @@ export const stations = [
         "defaultArt": "https://reelworld.com/assets/images/marketing/jingles/kiis-2022/tile.jpg",
         "bgdefaultArt": "https://reelworld.com/assets/images/marketing/jingles/kiis-2022/tile.jpg",
         "streams": {
-            "high": { "url": "https://stream.revma.ihrhls.com/zc185/hls.m3u8", "format": "Alta qualidade" },
+            "high": { "url": "", "format": "Alta qualidade" },
             "mid": { "url": "", "format": "Qualidade padrão" },
             "low": { "url": "https://cloud.revma.ihrhls.com/zc185?rj-org=n2cb-e2&rj-ttl=5&rj-tok=AAABoC7mA8YA_ZdqehlI-C1F1A", "format": "Qualidade Compactada" }
         }
