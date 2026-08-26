@@ -98,7 +98,7 @@ export const stations = [
         "type": "100hitz",
         "limitHistory": 10,
         "record": "false",
-        "contact": "https://fr-fr.facebook.com/nrjradio",
+        "contact": "https://www.facebook.com/100hitzcom",
         "visualizer": "true",
         "defaultArt": "https://100hitz.com/wp-content/uploads/2023/03/1.-Top-40_Hitz-LargeGlow-Offset-370x370.png",
         "bgdefaultArt": "https://100hitz.com/wp-content/uploads/2023/03/1.-Top-40_Hitz-LargeGlow-Offset-370x370.png",
