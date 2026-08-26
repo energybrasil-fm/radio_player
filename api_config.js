@@ -120,7 +120,7 @@ async function safeFetchJson(url, forceProxy = false) {
         }
 
         const proxies = [
-            "https://api.allorigins.win/raw?url=",
+            "https://corsproxy.io/?url=",
             "https://corsproxy.io/?",
             "https://api.codetabs.com/v1/proxy?quest=",
 "https://corsproxy.io/?url="
